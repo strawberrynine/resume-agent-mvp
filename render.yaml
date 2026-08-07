@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: resume-agent-mvp
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m app.main
+    healthCheckPath: /
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://api.openai.com/v1
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: GRADIO_SERVER_NAME
+        value: 0.0.0.0

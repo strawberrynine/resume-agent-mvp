@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+
+# Virtual environments and tooling
+.venv/
+venv/
+env/
+.uv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.gradio*.log
+*.stdout.log
+*.stderr.log
+.runtime/
+_github_upload_ready/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Build and coverage output
+build/
+dist/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

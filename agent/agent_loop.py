@@ -24,6 +24,9 @@ class AgentLoopConfig:
 
     target_score: int = 80
     max_iterations: int = 5
+    # Even a strong resume should receive one complete rewrite so the UI can
+    # show an actionable optimized document instead of echoing the source.
+    always_optimize_once: bool = True
 
 
 class AgentLoop:
@@ -59,13 +62,22 @@ class AgentLoop:
         logger.info("Agent loop iteration=1 score=%d action=initial_score", current_match.score)
 
         optimization = ResumeOptimizerOutput(
-            suggestions=["No optimization required: target score reached."],
+            suggestions=["Preparing a truthful role-aligned rewrite."],
             optimized_resume_markdown=current_resume,
         )
+        best_optimized_resume = ""
+        best_optimized_match: ResumeMatcherOutput | None = None
+        best_optimization: ResumeOptimizerOutput | None = None
 
         optimization_iterations = 0
         while (
-            current_match.score < self.config.target_score
+            (
+                current_match.score < self.config.target_score
+                or (
+                    self.config.always_optimize_once
+                    and optimization_iterations == 0
+                )
+            )
             and optimization_iterations < self.config.max_iterations
         ):
             optimization_iterations += 1
@@ -80,6 +92,7 @@ class AgentLoop:
                     jd_analysis=jd_analysis,
                     match_result=current_match,
                     knowledge_context=knowledge_context or [],
+                    source_resume_text=resume_text,
                 )
             )
             current_resume = optimization.optimized_resume_markdown
@@ -100,6 +113,37 @@ class AgentLoop:
                 current_match.score,
                 change,
             )
+
+            if (
+                best_optimized_match is None
+                or current_match.score > best_optimized_match.score
+            ):
+                best_optimized_resume = current_resume
+                best_optimized_match = current_match
+                best_optimization = optimization
+
+            # Continue from the strongest valid optimized draft instead of
+            # allowing a weaker later draft to become the next factual context.
+            current_resume = best_optimized_resume
+            current_match = best_optimized_match
+
+            if optimization.used_fallback:
+                logger.warning("Agent loop stopped after optimizer safety fallback")
+                break
+
+        if best_optimized_match is not None and best_optimization is not None:
+            if best_optimized_resume != current_resume:
+                history.append(
+                    ScoreRecord(
+                        iteration=len(history) + 1,
+                        score=best_optimized_match.score,
+                        change=best_optimized_match.score - current_match.score,
+                        action="Selected best optimized version",
+                    )
+                )
+            current_resume = best_optimized_resume
+            current_match = best_optimized_match
+            optimization = best_optimization
 
         stop_reason = (
             "target_reached"

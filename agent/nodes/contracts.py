@@ -1,13 +1,22 @@
-"""Typed inputs and outputs shared by workflow nodes."""
+"""Typed inputs and outputs shared by workflow nodes.
+
+The workflow intentionally keeps the optimized resume in Markdown for the
+current Gradio UI.  ``structured_resume`` is an additive, optional payload so
+future clients can render sections (or offer side-by-side editing) without
+changing the node boundary again.
+"""
 
 from dataclasses import dataclass, field
+from typing import Any
 
 
 @dataclass(frozen=True)
 class ResumeParserInput:
     """Input required by the resume parser node."""
 
-    pdf_path: str
+    file_path: str = ""
+    # Kept for compatibility with the first PDF-only MVP contract.
+    pdf_path: str = ""
 
 
 @dataclass(frozen=True)
@@ -15,6 +24,9 @@ class ResumeParserOutput:
     """Extracted resume content passed to downstream nodes."""
 
     resume_text: str
+    original_file: dict[str, Any] = field(default_factory=dict)
+    working_file: str = ""
+    warnings: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -59,6 +71,7 @@ class ResumeOptimizerInput:
     jd_analysis: JDAnalyzerOutput
     match_result: ResumeMatcherOutput
     knowledge_context: list[str] = field(default_factory=list)
+    source_resume_text: str = ""
 
 
 @dataclass(frozen=True)
@@ -67,6 +80,30 @@ class ResumeOptimizerOutput:
 
     suggestions: list[str] = field(default_factory=list)
     optimized_resume_markdown: str = ""
+    structured_resume: dict[str, Any] = field(default_factory=dict)
+    optimization_highlights: list[str] = field(default_factory=list)
+    optimization_explanations: list[dict[str, Any]] = field(default_factory=list)
+    used_fallback: bool = False
+
+
+@dataclass(frozen=True)
+class ResumeSectionOptimizerInput:
+    """Inputs required to rewrite one section without changing the full resume."""
+
+    original_resume_text: str
+    current_resume_markdown: str
+    section_title: str
+    section_markdown: str
+    job_description: str
+    instruction: str
+
+
+@dataclass(frozen=True)
+class ResumeSectionOptimizerOutput:
+    """A single truthful rewritten section and a concise change summary."""
+
+    section_markdown: str
+    highlight: str = ""
 
 
 @dataclass(frozen=True)
@@ -97,6 +134,10 @@ class OutputInput:
     optimization: ResumeOptimizerOutput
     score_history: list[ScoreRecord] = field(default_factory=list)
     knowledge_sources: list[str] = field(default_factory=list)
+    # Optional fields keep the original MVP call sites source-compatible while
+    # enabling a future original/optimized comparison view.
+    original_resume_text: str = ""
+    optimization_highlights: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

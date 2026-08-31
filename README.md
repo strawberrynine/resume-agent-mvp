@@ -33,9 +33,9 @@ The application has no login, database, payments, history, or multi-page navigat
 
 ## Demo Screenshot
 
-Screenshot placeholder: add a real screenshot at `assets/screenshots/resume-agent.png` after running the app locally.
+The screenshot below shows the current ResumeFlow AI homepage running locally.
 
-![Resume Agent screenshot placeholder](assets/screenshots/resume-agent-placeholder.svg)
+![ResumeFlow AI 首页截图](assets/screenshots/resume-agent.png)
 
 ## Tech Stack
 
